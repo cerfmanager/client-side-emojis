@@ -1,0 +1,32 @@
+{
+    "providers": [
+{
+    "type": "bitmap",
+    "file": "client-side-emojis:font/fuck.png",
+    "ascent": 8,
+    "height": 8,
+    "chars": ["\uF000"]
+},
+{
+    "type": "bitmap",
+    "file": "client-side-emojis:font/heart.png",
+    "ascent": 8,
+    "height": 8,
+    "chars": ["\uF001"]
+},
+{
+    "type": "bitmap",
+    "file": "client-side-emojis:font/piss.png",
+    "ascent": 8,
+    "height": 8,
+    "chars": ["\uF002"]
+},
+{
+    "type": "bitmap",
+    "file": "client-side-emojis:font/wah.png",
+    "ascent": 8,
+    "height": 8,
+    "chars": ["\uF003"]
+}
+    ]
+}

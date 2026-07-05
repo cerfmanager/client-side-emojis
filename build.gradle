@@ -1,0 +1,167 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+	id "org.jetbrains.kotlin.jvm" version "2.4.0"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"client-side-emojis" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+kotlin {
+	compilerOptions {
+		jvmTarget = JvmTarget.JVM_25
+	}
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName"}
+	}
+}
+
+// configure the maven publication
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
+}
+
+
+
+import java.nio.file.Files
+
+tasks.register("generateEmojiFont") {
+    group = "client-side-emojis"
+    description = "Scans emoji PNGs and regenerates default.json + the runtime emoji registry"
+
+    doLast {
+        def texturesDir = project.projectDir.toPath()
+            .resolve("src/main/resources/assets/client-side-emojis/textures/font")
+        def fontOutput = project.projectDir.toPath()
+            .resolve("src/main/resources/assets/minecraft/font/default.json")
+        def registryOutput = project.projectDir.toPath()
+            .resolve("src/main/resources/assets/client-side-emojis/emoji_registry.json")
+
+        if (!java.nio.file.Files.exists(texturesDir)) {
+            throw new GradleException("Emoji texture folder not found: ${texturesDir}")
+        }
+
+        def paths = []
+        java.nio.file.Files.walk(texturesDir).withCloseable { stream ->
+            stream.filter { java.nio.file.Files.isRegularFile(it) }
+                  .filter { it.toString().endsWith(".png") }
+                  .sorted()
+                  .forEach { paths << it }
+        }
+
+        def fontProviders = []
+        def registryEntries = []
+
+        paths.eachWithIndex { path, index ->
+            def codepoint = 0xF000 + index
+            def trigger = ":" + path.fileName.toString().replace(".png", "") + ":"
+            def escapedChar = String.format("\\u%04X", codepoint)
+
+            fontProviders << """
+    {
+        "type": "bitmap",
+        "file": "client-side-emojis:font/${path.fileName}",
+        "ascent": 8,
+        "height": 8,
+        "chars": ["${escapedChar}"]
+    }""".stripIndent().trim()
+
+            registryEntries << "    \"${trigger}\": ${codepoint}"
+        }
+
+        fontOutput.toFile().parentFile.mkdirs()
+        registryOutput.toFile().parentFile.mkdirs()
+
+        fontOutput.toFile().text = """
+{
+    "providers": [
+${fontProviders.join(",\n")}
+    ]
+}
+""".stripIndent().trim()
+
+        registryOutput.toFile().text = """
+{
+${registryEntries.join(",\n")}
+}
+""".stripIndent().trim()
+
+        println "Generated font + registry for ${paths.size()} emoji(s)"
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn("generateEmojiFont")
+}
