@@ -9,7 +9,8 @@ import kotlin.collections.iterator
 object EmojiRegistry {
 
     private val logger = LoggerFactory.getLogger("client-side-emojis")
-    private val triggerToGlyph: Map<String, String> = loadRegistry()
+    @JvmStatic
+    public val triggerToGlyph: Map<String, String> = loadRegistry()
 
     private fun loadRegistry(): Map<String, String> {
         val stream = EmojiRegistry::class.java.getResourceAsStream("/assets/client-side-emojis/emoji_registry.json")
