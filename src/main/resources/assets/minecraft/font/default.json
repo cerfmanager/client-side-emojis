@@ -16,17 +16,31 @@
 },
 {
     "type": "bitmap",
-    "file": "client-side-emojis:font/piss.png",
+    "file": "client-side-emojis:font/meow.png",
     "ascent": 8,
     "height": 8,
     "chars": ["\uF002"]
 },
 {
     "type": "bitmap",
-    "file": "client-side-emojis:font/wah.png",
+    "file": "client-side-emojis:font/piss.png",
     "ascent": 8,
     "height": 8,
     "chars": ["\uF003"]
+},
+{
+    "type": "bitmap",
+    "file": "client-side-emojis:font/pout.png",
+    "ascent": 8,
+    "height": 8,
+    "chars": ["\uF004"]
+},
+{
+    "type": "bitmap",
+    "file": "client-side-emojis:font/wah.png",
+    "ascent": 8,
+    "height": 8,
+    "chars": ["\uF005"]
 }
     ]
 }
