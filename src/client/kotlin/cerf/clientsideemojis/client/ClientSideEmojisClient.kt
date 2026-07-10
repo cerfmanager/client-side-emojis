@@ -1,10 +1,17 @@
 package cerf.clientsideemojis.client
 
-import cerf.clientsideemojis.client.EmojiRegistry
+
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.client.Minecraft
+import net.minecraft.client.resources.sounds.SimpleSoundInstance
+import net.minecraft.commands.Commands
+import net.minecraft.network.chat.Component
+import net.minecraft.sounds.SoundEvents
+
+
 
 object ClientSideEmojisClient : ClientModInitializer {
 
@@ -21,13 +28,36 @@ object ClientSideEmojisClient : ClientModInitializer {
 
 
 
-        ClientReceiveMessageEvents.CHAT.register{ message, _, sender, _, timestamp ->
+        ClientReceiveMessageEvents.CHAT.register { message, _, sender, _, timestamp ->
 
             val senderName = sender?.name() ?: "Unknown"
-            val textContent = message.string.substringAfter(" ")
+            val textVal = message.string.substringAfter(" ")
+            val playerUsername = Minecraft.getInstance().user.name
 
-            println("(${timestamp.toString()}) [CHAT] $senderName: $textContent")
+            if (senderName != playerUsername && textVal.contains("@${playerUsername}")) {
+                // check if the sender isnt yourself , and if it contains the string, if yes ping the player
+                Minecraft.getInstance().soundManager.play(
+                    SimpleSoundInstance.forUI(
+                        SoundEvents.ARROW_HIT_PLAYER,
+                        0.5F
+                        ,2.0F
+                    )
+                )
+
+            }
+
 
         }
+
+
+        CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
+            dispatcher.register(
+                Commands.literal("test_command").executes { context ->
+                    context.source.sendSuccess({ Component.literal("Called /test_command.") }, true)
+                    1
+                }
+            )
+        }
+
     }
 }
